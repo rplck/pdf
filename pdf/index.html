@@ -262,6 +262,38 @@ function undo() {
   pages = hist.pop(); sel = new Set(); anchor = null; render(); say("Последнее удаление отменено");
 }
 
+// Сохранение файла: на iPhone <a download> открывает PDF в просмотрщике, поэтому используем меню «Поделиться»
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+async function saveBlob(blob, filename) {
+  const file = new File([blob], filename, { type: "application/pdf" });
+  if (isIOS() && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) {
+      if (e && e.name === "AbortError") return; // юзер закрыл меню
+      // Safari мог потерять «жест пользователя» после долгой обработки — просим нажать ещё раз
+      await new Promise((resolve) => {
+        const st = $("status");
+        st.innerHTML = "";
+        const b = document.createElement("button");
+        b.textContent = "Нажми, чтобы сохранить: " + filename;
+        b.style.cssText = "padding:10px 16px;font-size:16px;border-radius:10px;border:0;background:#2563eb;color:#fff";
+        b.onclick = async () => {
+          try { await navigator.share({ files: [file] }); } catch (e2) {}
+          resolve();
+        };
+        st.appendChild(b);
+      });
+      return;
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+
 async function savePdf() {
   if (busy) return;
   busy = true; render(); say("Готовлю файл…");
@@ -274,12 +306,7 @@ async function savePdf() {
     let dl = null;
     try { dl = window.claude && (await claude.use("downloads")); } catch (e) {}
     if (dl) await dl.save({ filename, data: blob });
-    else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-    }
+    else await saveBlob(blob, filename);
     say(`Сохранено: ${filename} (${pages.length} стр.)`, "ok");
   } catch (e) {
     if (e && e.code === "declined") say("Сохранение отменено");
