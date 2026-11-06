@@ -15,7 +15,8 @@ font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
 body{height:100%;margin:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
 .bar{display:flex;align-items:center;gap:8px 10px;padding:10px 14px;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--line)}
-.file{display:flex;flex-direction:column;min-width:0;max-width:260px;line-height:1.25}
+.file{display:flex;flex-direction:column;min-width:0;max-width:260px;line-height:1.25;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;touch-action:manipulation}
+.file:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .file b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .file span{font-size:12px;color:var(--muted)}
 .range{display:flex;gap:6px;flex:0 1 340px;min-width:0}
@@ -60,7 +61,7 @@ footer.error{color:var(--del)}footer.ok{color:var(--ok)}
 <body>
 <header class="bar" id="bar">
   <button class="btn" id="openBtn" type="button">Открыть PDF</button>
-  <div class="file" id="file" hidden><b id="fname"></b><span id="fcount"></span></div>
+  <button class="file" id="file" type="button" hidden title="Открыть другой PDF"><b id="fname"></b><span id="fcount"></span></button>
   <form class="range" id="rangeForm" hidden>
     <input id="rangeInput" placeholder="Номера: 2, 5, 8-12" aria-label="Номера страниц" autocomplete="off" inputmode="text" enterkeyhint="go">
     <button class="btn" type="submit">Выбрать</button>
@@ -206,6 +207,7 @@ async function load(file) {
     pages.forEach((i) => cards.set(i, makeCard(i)));
     $("fname").textContent = file.name; $("fname").title = file.name; $("rangeInput").value = "";
     $("empty").hidden = true; $("grid").hidden = false;
+    $("openBtn").hidden = true; // кнопка «Открыть PDF» больше не нужна: другой файл открывается по клику на имя или перетаскиванием
     for (const id of ["file", "rangeForm", "delBtn", "undoBtn", "saveBtn"]) $(id).hidden = false;
     $("main").scrollTop = 0;
     render();
@@ -256,7 +258,7 @@ async function savePdf() {
 }
 
 const pick = () => $("fileInput").click();
-$("openBtn").onclick = $("openBtn2").onclick = pick;
+$("openBtn").onclick = $("openBtn2").onclick = $("file").onclick = pick;
 $("fileInput").onchange = (e) => { load(e.target.files[0]); e.target.value = ""; };
 $("delBtn").onclick = deleteSelected; $("undoBtn").onclick = undo; $("saveBtn").onclick = savePdf;
 $("rangeForm").onsubmit = (e) => {
