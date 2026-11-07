@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDF Cleaner</title>
+<style>
+:root{--bg:#ececee;--surface:#fff;--ink:#1d1d1f;--muted:#6e6e73;--hair:rgba(0,0,0,.12);--toolbar:rgba(246,246,248,.78);--field:rgba(0,0,0,.06);--btn:#fff;--btn-ring:rgba(0,0,0,.14);--btn-shadow:0 1px 1px rgba(0,0,0,.08);--prim:#1d1d1f;--on:#fff;--del:#d70015;--del-fill:#dc2f24;--thumb-ring:rgba(0,0,0,.22);--ph:#f3f3f5;--shine:rgba(255,255,255,.7);--ease:cubic-bezier(.32,.72,0,1);
+box-sizing:border-box;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1e;--surface:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--hair:rgba(255,255,255,.12);--toolbar:rgba(40,40,42,.74);--field:rgba(255,255,255,.1);--btn:rgba(255,255,255,.13);--btn-ring:rgba(255,255,255,.06);--btn-shadow:0 0 0 0 transparent;--prim:#f5f5f7;--on:#1d1d1f;--del:#ff453a;--del-fill:#e03a30;--thumb-ring:rgba(255,255,255,.12);--ph:#3a3a3c;--shine:rgba(255,255,255,.09);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1e;--surface:#2c2c2e;--ink:#f5f5f7;--muted:#98989d;--hair:rgba(255,255,255,.12);--toolbar:rgba(40,40,42,.74);--field:rgba(255,255,255,.1);--btn:rgba(255,255,255,.13);--btn-ring:rgba(255,255,255,.06);--btn-shadow:0 0 0 0 transparent;--prim:#f5f5f7;--on:#1d1d1f;--del:#ff453a;--del-fill:#e03a30;--thumb-ring:rgba(255,255,255,.12);--ph:#3a3a3c;--shine:rgba(255,255,255,.09);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{position:relative;height:100%;margin:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased}
+.bar,footer,.vbar{background:var(--toolbar);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%)}
+.bar{position:absolute;inset:0 0 auto 0;z-index:5;display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:10px 16px;min-height:52px;box-shadow:0 .5px 0 var(--hair)}
+.file{display:flex;flex-direction:column;min-width:0;max-width:260px;line-height:1.25;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;touch-action:manipulation}
+.file b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file span{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.range{display:flex;gap:8px;flex:0 1 320px;min-width:0}
+.range input{flex:1;min-width:0;min-height:32px;padding:5px 12px;border:0;border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:13px}
+.range input::placeholder{color:var(--muted)}
+.name{display:flex;align-items:center;gap:2px;flex:1 1 160px;min-width:120px;max-width:260px;min-height:32px;padding:0 12px;border-radius:8px;background:var(--field);color:var(--muted)}
+.name input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--ink);font:inherit;font-size:13px;padding:5px 0}
+.name input::placeholder{color:var(--muted)}
+.name:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+.actions{display:flex;gap:8px;margin-left:auto}
+.btn{min-height:32px;padding:5px 14px;border:0;border-radius:8px;background:var(--btn);color:var(--ink);font:inherit;font-size:13px;font-weight:500;letter-spacing:.005em;white-space:nowrap;cursor:pointer;touch-action:manipulation;box-shadow:0 0 0 .5px var(--btn-ring),var(--btn-shadow);transition:background-color .15s,opacity .15s,transform .4s var(--ease)}
+.btn:active:not(:disabled){transform:scale(.97);transition-duration:.08s,.15s,.08s}
+@media (hover:hover){.btn:hover:not(:disabled){background:color-mix(in srgb,var(--btn) 90%,var(--ink))}.btn.primary:hover:not(:disabled){background:color-mix(in srgb,var(--prim) 86%,var(--on))}.btn.danger:hover:not(:disabled){background:color-mix(in srgb,var(--del-fill) 88%,#000)}}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--prim);color:var(--on);box-shadow:none}
+.btn.danger:not(:disabled){background:var(--del-fill);color:#fff;box-shadow:none}
+:is(.btn,input,.card,.file,.nav,.zoom):focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+@media (pointer:coarse){.btn,.range input,.name{min-height:40px;font-size:15px}.range input,.name input{font-size:16px}}
+main{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;padding:calc(var(--bar-h,52px) + 24px) 24px 56px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.grid{flex:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));gap:24px 20px;align-content:start}
+.card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.thumb{position:relative;width:100%;aspect-ratio:var(--ar,1/1.414);background:var(--ph);border-radius:2px;overflow:hidden;box-shadow:0 0 0 .5px var(--thumb-ring),0 2px 8px rgba(0,0,0,.16);outline:3px solid transparent;outline-offset:2px;transition:outline-color .18s,transform .4s var(--ease)}
+.thumb canvas{width:100%;height:100%;display:block;opacity:0;transition:opacity .45s var(--ease)}
+.thumb.ready{background:#fff;transition:outline-color .18s,transform .4s var(--ease),background-color .45s}
+.thumb.ready canvas{opacity:1}
+.thumb::before{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;background:linear-gradient(100deg,transparent 35%,var(--shine) 50%,transparent 65%);transition:opacity .3s}
+.thumb.loading::before{opacity:1;animation:shine 1.5s ease-in-out infinite}
+@keyframes shine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.thumb::after{content:"";position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:50%;background:var(--del-fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 8l8 8M16 8l-8 8' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center/100% no-repeat;box-shadow:0 0 0 1.5px #fff;opacity:0;transform:scale(.6);transition:opacity .15s,transform .35s var(--ease)}
+.card:active .thumb{transform:scale(.97);transition-duration:.18s,.08s}
+.num{min-width:24px;padding:1px 8px;border-radius:99px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;transition:background-color .18s,color .18s}
+.card.sel .thumb{outline-color:var(--del-fill)}
+.card.sel .thumb canvas{opacity:.45}
+.card.sel .thumb::after{opacity:1;transform:none}
+.card.sel .num{background:var(--del-fill);color:#fff;font-weight:600}
+.empty{flex:1;display:grid;place-content:center;justify-items:center;text-align:center;gap:10px;padding:24px}
+.empty svg{width:56px;height:70px;margin-bottom:6px;color:var(--muted)}
+.empty h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.empty p{margin:0 0 10px;font-size:14px;line-height:1.5;color:var(--muted);max-width:38ch;text-wrap:balance}
+.empty .btn{min-height:34px;padding-inline:18px;font-size:14px}
+footer{position:absolute;inset:auto 0 0 0;z-index:5;padding:7px 16px;font-size:12px;line-height:1.4;text-align:center;color:var(--muted);box-shadow:0 -.5px 0 var(--hair);overflow-wrap:anywhere;display:flex;justify-content:center;align-items:center;min-height:30px}
+footer:empty{display:none}
+footer.error{color:var(--del)}footer.ok{color:var(--ink)}
+footer .btn{min-height:32px}
+.drop{position:fixed;inset:10px;display:none;place-items:center;text-align:center;padding:16px;font-size:15px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:2.5px solid var(--ink);border-radius:14px;pointer-events:none;z-index:10}
+.drop.on{display:grid;animation:fade .18s ease-out}
+.zoom{position:absolute;top:6px;right:6px;z-index:2;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:rgba(30,30,32,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;transition:opacity .15s,transform .35s var(--ease)}
+.zoom:active{transform:scale(.92);transition-duration:.15s,.08s}
+.zoom svg{width:16px;height:16px}
+@media (hover:hover){.zoom{opacity:0}.card:hover .zoom,.card:focus-within .zoom,.zoom:focus-visible{opacity:1}}
+@media (pointer:coarse){.zoom{width:36px;height:36px}.zoom svg{width:18px;height:18px}}
+.viewer{--ink:#f5f5f7;--muted:#a1a1a6;--hair:rgba(255,255,255,.14);--toolbar:rgba(34,34,36,.72);--btn:rgba(255,255,255,.14);--btn-ring:rgba(255,255,255,.06);--btn-shadow:0 0 0 0 transparent;--prim:#f5f5f7;--on:#1d1d1f;--del:#ff453a;--del-fill:#e03a30;position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;color:var(--ink);background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(30px) saturate(130%);backdrop-filter:blur(30px) saturate(130%);transform-origin:var(--ox,50%) var(--oy,50%);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.viewer:not([hidden]){animation:vin .45s var(--ease)}
+.vbar{position:absolute;z-index:3;inset:env(safe-area-inset-top,0px) 0 auto 0;display:flex;align-items:center;gap:8px;padding:10px 16px;box-shadow:0 .5px 0 var(--hair)}
+.vnum{font-size:13px;font-weight:600;margin-right:auto;font-variant-numeric:tabular-nums}
+.vnum.sel{color:var(--del)}
+.vbody{position:absolute;inset:0}
+.vstage{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;padding:calc(68px + env(safe-area-inset-top,0px)) 64px calc(20px + env(safe-area-inset-bottom,0px))}
+.vstage canvas{background:#fff;border-radius:2px;box-shadow:0 0 0 .5px rgba(0,0,0,.3),0 20px 50px -10px rgba(0,0,0,.6);display:block;animation:fade .2s ease-out}
+.nav{position:absolute;z-index:2;top:50%;margin:-18px 0 0;width:36px;height:36px;padding:0 0 3px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(60,60,64,.6);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#fff;font-size:24px;line-height:1;cursor:pointer;touch-action:manipulation;transition:opacity .15s,transform .35s var(--ease)}
+.nav:active:not(:disabled){transform:scale(.92);transition-duration:.15s,.08s}
+.nav:disabled{opacity:.25;cursor:default}
+#vprev{left:calc(14px + env(safe-area-inset-left,0px))}#vnext{right:calc(14px + env(safe-area-inset-right,0px))}
+.vstage{touch-action:none;user-select:none;-webkit-user-select:none}
+.vslide{position:absolute;inset:0;padding:inherit;display:grid;place-items:center;pointer-events:none;will-change:transform,opacity}
+.vslide canvas{pointer-events:auto}
+.vslide.sel canvas{outline:3px solid var(--del-fill);outline-offset:3px}
+@keyframes fade{from{opacity:0}}
+@keyframes vin{from{opacity:0;transform:scale(.9)}}
+@media (max-width:640px){
+  .bar{padding:8px 10px}
+  .file{flex:1;max-width:none}
+  .range{order:3;flex:1 1 100%}
+  .name{order:3;flex:1 1 100%;max-width:none}
+  .actions{order:4;flex:1 1 100%;margin-left:0}
+  .actions .btn{flex:1;padding-inline:8px}
+  main{padding:calc(var(--bar-h,52px) + 16px) 14px 52px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,100px),1fr));gap:18px 12px}
+  .card{padding:2px;gap:6px}
+  .vbar{padding:8px 10px}.vbar .btn{padding-inline:10px}
+  .vstage{padding:calc(60px + env(safe-area-inset-top,0px)) 8px calc(12px + env(safe-area-inset-bottom,0px))}
+  .nav{background:rgba(60,60,64,.45)}#vprev{left:8px}#vnext{right:8px}
+}
+@media (max-height:480px) and (orientation:landscape){.bar{padding:6px 10px}.btn,.range input{min-height:34px}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}.thumb.loading::before{animation:none}}
+@media (prefers-reduced-transparency:reduce){.bar,footer,.vbar{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}.viewer{background:rgba(0,0,0,.88);-webkit-backdrop-filter:none;backdrop-filter:none}.drop,.zoom,.nav{-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-contrast:more){.bar,footer,.vbar{background:var(--surface)}.btn{box-shadow:0 0 0 1px var(--ink)}}
+</style>
+</head>
+<body>
+<header class="bar" id="bar">
+  <button class="btn" id="openBtn" type="button">Открыть PDF</button>
+  <button class="file" id="file" type="button" hidden title="Открыть другой PDF"><b id="fname"></b><span id="fcount"></span></button>
+  <form class="range" id="rangeForm" hidden>
+    <input id="rangeInput" placeholder="Номера: 2, 5, 8-12" aria-label="Номера страниц" autocomplete="off" inputmode="text" enterkeyhint="go">
+    <button class="btn" type="submit">Выбрать</button>
+  </form>
+  <label class="name" id="nameBox" hidden><input id="nameInput" placeholder="Название файла" aria-label="Название файла" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"><span>.pdf</span></label>
+  <div class="actions">
+    <button class="btn danger" id="delBtn" type="button" hidden>Удалить выбранные</button>
+    <button class="btn" id="undoBtn" type="button" hidden>Отменить</button>
+    <button class="btn primary" id="saveBtn" type="button" hidden>Сохранить PDF</button>
+  </div>
+</header>
+<main id="main">
+  <div class="empty" id="empty">
+    <svg viewBox="0 0 56 70" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M8 4h28l12 12v50H8z"/><path d="M36 4v12h12"/><path d="M16 30h24M16 38h24M16 46h14" opacity=".55"/></svg>
+    <h1>PDF Cleaner</h1>
+    <p>Перетащите PDF в окно или нажмите «Открыть PDF». Файл обрабатывается прямо в вашем браузере и никуда не отправляется.</p>
+    <button class="btn primary" id="openBtn2" type="button">Открыть PDF</button>
+  </div>
+  <div class="grid" id="grid" hidden></div>
+</main>
+<footer id="status" role="status" aria-live="polite"></footer>
+<div class="drop" id="drop">Отпустите, чтобы открыть PDF</div>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Просмотр страницы" hidden>
+  <div class="vbar">
+    <span class="vnum" id="vnum"></span>
+    <button class="btn" id="vsel" type="button"></button>
+    <button class="btn" id="vclose" type="button">Закрыть ✕</button>
+  </div>
+  <div class="vbody">
+    <button class="nav" id="vprev" type="button" aria-label="Предыдущая страница">‹</button>
+    <div class="vstage" id="vstage"></div>
+    <button class="nav" id="vnext" type="button" aria-label="Следующая страница">›</button>
+  </div>
+</div>
+<input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+// Воркер уже загружен скриптом выше (pdf.js использует его в основном потоке); URL нужен только как запасной вариант
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let pdf = null, bytes = null, fileName = "", pages = [], hist = [], sel = new Set();
+let cards = new Map(), gen = 0, busy = false, anchor = null, loading = false;
+
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (e.isIntersecting) { io.unobserve(e.target); enqueue(e.target); }
+}), { root: $("main"), rootMargin: "400px" });
+
+// Рендер миниатюр по очереди, чтобы интерфейс не зависал
+const queue = []; let running = false;
+function enqueue(card) { card.querySelector(".thumb").classList.add("loading"); queue.push({ card, g: gen }); if (!running) run(); }
+async function run() {
+  running = true;
+  while (queue.length) {
+    const { card, g } = queue.shift();
+    if (g !== gen) continue;
+    try {
+      const page = await pdf.getPage(card._i + 1);
+      if (g !== gen) { page.cleanup(); continue; }
+      const base = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: (180 / base.width) * Math.min(window.devicePixelRatio || 1, 2) });
+      const c = card.querySelector("canvas");
+      c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+      card.querySelector(".thumb").style.aspectRatio = `${vp.width} / ${vp.height}`;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      page.cleanup();
+      card.querySelector(".thumb").classList.add("ready");
+    } catch (e) { /* миниатюра не отрисовалась — страница всё равно останется в файле */ }
+    card.querySelector(".thumb").classList.remove("loading");
+    await new Promise((r) => setTimeout(r)); // отдаём управление интерфейсу
+  }
+  running = false;
+}
+
+// Имя файла от пользователя: убираем запрещённые символы и лишнее «.pdf»
+function cleanName(v) {
+  return v.replace(/[\u0000-\u001f\u007f]/g, "").replace(/[\\/:*?"<>|]+/g, "-").replace(/\.pdf\s*$/i, "").trim().replace(/^\.+/, "").slice(0, 120).trim();
+}
+function say(text, kind = "") { const s = $("status"); s.textContent = text; s.className = kind; }
+
+function parseRanges(input, total) {
+  const text = input.trim().replace(/\s*([-–—])\s*/g, "$1"); // «8 - 12» → «8-12»
+  if (!text) return { error: "Введите номера страниц, например: 2, 5, 8-12" };
+  const out = new Set();
+  for (const part of text.split(/[,;\s]+/).filter(Boolean)) {
+    const m = part.match(/^(\d+)(?:[-–—](\d+))?$/);
+    if (!m) return { error: `Не удалось разобрать «${part}»` };
+    const a = +m[1], b = m[2] !== undefined ? +m[2] : a;
+    if (a < 1 || b < 1) return { error: "Нумерация начинается с 1" };
+    if (a > b) return { error: `Диапазон «${part}» задан в обратном порядке` };
+    if (b > total) return { error: `В документе только ${total} стр.` };
+    for (let i = a; i <= b; i++) out.add(i);
+  }
+  return { pages: [...out].sort((x, y) => x - y) };
+}
+
+function makeCard(i) {
+  const b = document.createElement("div");
+  b.className = "card"; b._i = i; b.tabIndex = 0; b.setAttribute("role", "button");
+  b.innerHTML = '<div class="thumb"><canvas></canvas><button type="button" class="zoom" title="Увеличить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 8v5M8 10.5h5"/></svg></button></div><span class="num"></span>';
+  b.querySelector(".zoom").onclick = (e) => { e.stopPropagation(); openViewer(i, e.currentTarget); };
+  b.onkeydown = (e) => { if (e.target === b && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); b.click(); } };
+  b.onclick = (e) => {
+    if (e.shiftKey && anchor !== null && pages.includes(anchor)) {
+      // Shift+клик — выбрать диапазон от последней отмеченной страницы
+      const a = pages.indexOf(anchor), z = pages.indexOf(i);
+      for (let k = Math.min(a, z); k <= Math.max(a, z); k++) sel.add(pages[k]);
+    } else {
+      sel.has(i) ? sel.delete(i) : sel.add(i);
+    }
+    anchor = i;
+    refreshSel();
+  };
+  io.observe(b);
+  return b;
+}
+
+// Обновляет только состояние выбора (без перестановки узлов)
+function refreshSel() {
+  for (const i of pages) {
+    const c = cards.get(i), on = sel.has(i);
+    if (c.classList.contains("sel") !== on) { c.classList.toggle("sel", on); c.setAttribute("aria-pressed", on); }
+  }
+  $("delBtn").textContent = "Удалить выбранные" + (sel.size ? ` (${sel.size})` : "");
+  $("delBtn").disabled = sel.size === 0;
+}
+
+function render() {
+  const grid = $("grid");
+  const keep = new Set(pages);
+  for (const [i, c] of cards) if (!keep.has(i) && c.parentNode) c.remove();
+  pages.forEach((i, pos) => {
+    const c = cards.get(i);
+    c.setAttribute("aria-label", `Страница ${pos + 1}`);
+    c.setAttribute("aria-pressed", sel.has(i));
+    c.classList.toggle("sel", sel.has(i));
+    c.querySelector(".num").textContent = pos + 1;
+    c.querySelector(".zoom").setAttribute("aria-label", `Увеличить страницу ${pos + 1}`);
+    grid.appendChild(c); // переставляет существующий узел, миниатюра не рисуется заново
+  });
+  $("fcount").textContent = `${pages.length} из ${pdf.numPages} стр.`;
+  $("undoBtn").disabled = hist.length === 0;
+  $("saveBtn").disabled = busy || pages.length === pdf.numPages;
+  refreshSel();
+}
+
+async function load(file) {
+  if (!file || loading) return;
+  if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") return say("Выберите файл в формате PDF.", "error");
+  loading = true; say("Открываю…");
+  try {
+    const b = new Uint8Array(await file.arrayBuffer());
+    const doc = await pdfjsLib.getDocument({ data: b.slice() }).promise;
+    try { const p1 = await doc.getPage(1), v = p1.getViewport({ scale: 1 }); $("grid").style.setProperty("--ar", `${v.width} / ${v.height}`); p1.cleanup(); } catch (e) {} // заглушки сразу нужной пропорции
+    if (pdf) pdf.destroy();
+    gen++; queue.length = 0;
+    pdf = doc; bytes = b; fileName = file.name;
+    pages = Array.from({ length: doc.numPages }, (_, i) => i);
+    hist = []; sel = new Set(); anchor = null;
+    cards.forEach((c) => (io.unobserve(c), c.remove())); cards = new Map();
+    pages.forEach((i) => cards.set(i, makeCard(i)));
+    $("fname").textContent = file.name; $("fname").title = file.name; $("nameInput").value = file.name.replace(/\.pdf$/i, "") + "_cleaned"; $("rangeInput").value = "";
+    closeViewer(); $("empty").hidden = true; $("empty").style.display = "none"; $("grid").hidden = false;
+    $("openBtn").hidden = true; // кнопка «Открыть PDF» больше не нужна: другой файл открывается по клику на имя или перетаскиванием
+    for (const id of ["file", "rangeForm", "nameBox", "delBtn", "undoBtn", "saveBtn"]) $(id).hidden = false;
+    $("main").scrollTop = 0;
+    render();
+    say("Нажимайте на страницы, чтобы выбрать ненужные");
+  } catch (e) {
+    const m = `${e && e.name} ${e && e.message}`;
+    say(/password/i.test(m) ? "Файл защищён паролем — такие PDF не поддерживаются."
+      : /Invalid PDF|InvalidPDF|header/i.test(m) ? "Не удалось прочитать файл: он повреждён или это не PDF."
+      : "Ошибка: " + (e && e.message || e), "error");
+  } finally { loading = false; }
+}
+
+function deleteSelected() {
+  if (!pdf || busy || !sel.size) return;
+  if (sel.size >= pages.length) return say("Нельзя удалить все страницы документа.", "error");
+  const n = sel.size;
+  hist.push(pages); pages = pages.filter((i) => !sel.has(i)); sel = new Set(); anchor = null;
+  $("rangeInput").value = ""; render(); say(`Удалено страниц: ${n}`);
+}
+function undo() {
+  if (!pdf || busy || !hist.length) return;
+  pages = hist.pop(); sel = new Set(); anchor = null; render(); say("Последнее удаление отменено");
+}
+
+// Сохранение файла: на iPhone <a download> открывает PDF в просмотрщике, поэтому используем меню «Поделиться»
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+async function saveBlob(blob, filename) {
+  const file = new File([blob], filename, { type: "application/pdf" });
+  if (isIOS() && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) {
+      if (e && e.name === "AbortError") return; // юзер закрыл меню
+      // Safari мог потерять «жест пользователя» после долгой обработки — просим нажать ещё раз
+      await new Promise((resolve) => {
+        const st = $("status");
+        st.innerHTML = "";
+        const b = document.createElement("button");
+        b.textContent = "Нажми, чтобы сохранить: " + filename;
+        b.className = "btn primary";
+        b.onclick = async () => {
+          try { await navigator.share({ files: [file] }); } catch (e2) {}
+          resolve();
+        };
+        st.appendChild(b);
+      });
+      return;
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+
+async function savePdf() {
+  if (busy) return;
+  busy = true; render(); say("Готовлю файл…");
+  try {
+    const src = await PDFLib.PDFDocument.load(bytes, { updateMetadata: false });
+    const out = await PDFLib.PDFDocument.create();
+    (await out.copyPages(src, pages)).forEach((p) => out.addPage(p)); // страницы копируются как есть, без растеризации
+    const blob = new Blob([await out.save()], { type: "application/pdf" });
+    const filename = (cleanName($("nameInput").value) || fileName.replace(/\.pdf$/i, "") + "_cleaned") + ".pdf";
+    let dl = null;
+    try { dl = window.claude && (await claude.use("downloads")); } catch (e) {}
+    if (dl) await dl.save({ filename, data: blob });
+    else await saveBlob(blob, filename);
+    say(`Сохранено: ${filename} (${pages.length} стр.)`, "ok");
+  } catch (e) {
+    if (e && e.code === "declined") say("Сохранение отменено");
+    else say("Не удалось сохранить: " + (e && e.message || e), "error");
+  } finally { busy = false; render(); }
+}
+
+// Крупный просмотр: карусель с физикой — жест 1:1, проекция инерции, пружина, резинка у краёв
+let vPos = -1, vOff = 0, vVel = 0, vAnim = 0, vFrom = null, vRs = 0, vDrag = null, vJust = false, vDims = null;
+const vSlides = new Map(), vCache = new Map();
+const vReduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rubber = (o, dim, c = 0.55) => (o * dim * c) / (dim + c * Math.abs(o));
+const vEdge = (raw) => ((vPos === 0 && raw > 0) || (vPos === pages.length - 1 && raw < 0) ? rubber(raw, vDims.aw) : raw);
+
+function vMetrics() {
+  const st = $("vstage"), cs = getComputedStyle(st);
+  return {
+    aw: Math.max(50, st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)),
+    ah: Math.max(50, st.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)),
+    dpr: Math.min(window.devicePixelRatio || 1, 3),
+  };
+}
+function vStride() { const r = vSlides.get(pages[vPos]); return Math.min(vDims.aw, r && r.w ? r.w : vDims.aw) + 32; }
+
+function vRender(idx) {
+  const key = vDims.aw + "x" + vDims.ah, hit = vCache.get(idx);
+  if (hit && hit.key === key) return hit.promise;
+  const promise = (async () => {
+    const page = await pdf.getPage(idx + 1), base = page.getViewport({ scale: 1 });
+    const fit = Math.max(0.1, Math.min(vDims.aw / base.width, vDims.ah / base.height));
+    const vp = page.getViewport({ scale: fit * vDims.dpr }), c = document.createElement("canvas");
+    c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    const w = Math.floor(base.width * fit), h = Math.floor(base.height * fit);
+    c.style.width = w + "px"; c.style.height = h + "px";
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return { canvas: c, w, h };
+  })();
+  promise.catch(() => { if (vCache.get(idx) && vCache.get(idx).promise === promise) vCache.delete(idx); });
+  vCache.set(idx, { key, promise });
+  return promise;
+}
+function vMake(idx) {
+  const el = document.createElement("div"); el.className = "vslide";
+  $("vstage").appendChild(el);
+  const rec = { el, w: 0 }; vSlides.set(idx, rec);
+  vRender(idx).then((r) => { if (vSlides.get(idx) !== rec) return; rec.w = r.w; el.replaceChildren(r.canvas); vLayout(); }).catch(() => {});
+  return rec;
+}
+// Каждая страница — отдельный слайд; положение, масштаб и прозрачность считаются из одного числа vOff
+function vLayout() {
+  if (vPos < 0 || !vDims) return;
+  const stride = vStride(), need = new Map();
+  for (let k = -2; k <= 2; k++) {
+    const p = vPos + k; if (p < 0 || p >= pages.length) continue;
+    if (Math.abs(k) <= 1 || Math.abs(k + vOff / stride) < 1.05) need.set(pages[p], k);
+  }
+  for (const [idx, rec] of vSlides) if (!need.has(idx)) { rec.el.remove(); vSlides.delete(idx); }
+  for (const [idx, k] of need) {
+    const rec = vSlides.get(idx) || vMake(idx), rel = k + vOff / stride, a = Math.min(1, Math.abs(rel)), o = Math.pow(1 - a, 0.8);
+    rec.el.style.transform = `translate3d(${rel * stride}px,0,0) scale(${1 - 0.08 * a})`;
+    rec.el.style.opacity = o; rec.el.style.visibility = o < 0.01 ? "hidden" : "visible";
+    rec.el.classList.toggle("sel", sel.has(idx));
+  }
+  if (vCache.size > 10) for (const key of vCache.keys()) { if (!vSlides.has(key)) vCache.delete(key); if (vCache.size <= 8) break; }
+}
+// Пружина к нулю: ζ=1 — без отскока, ζ<1 — только когда жест нёс импульс
+function vAnimate(v0, zeta, response) {
+  cancelAnimationFrame(vAnim); vAnim = 0; vVel = 0;
+  if (vReduced()) { vOff = 0; vLayout(); return; }
+  const w = (2 * Math.PI) / response; let v = v0, last = performance.now();
+  const tick = (t) => {
+    const dt = Math.min(0.032, Math.max(0.001, (t - last) / 1000)); last = t;
+    const n = Math.ceil(dt * 240), h = dt / n;
+    for (let i = 0; i < n; i++) { v += (-w * w * vOff - 2 * zeta * w * v) * h; vOff += v * h; }
+    vVel = v;
+    if (Math.abs(vOff) < 0.2 && Math.abs(v) < 4) { vOff = 0; vVel = 0; vAnim = 0; vLayout(); return; }
+    vLayout(); vAnim = requestAnimationFrame(tick);
+  };
+  vAnim = requestAnimationFrame(tick);
+}
+// Переход на соседнюю страницу: логическая позиция меняется сразу, картинка продолжается без скачка
+function vCommit(d, v0, flick) {
+  const stride = vStride();
+  vPos += d; vOff = Math.max(-2 * stride, Math.min(2 * stride, vOff + d * stride));
+  updateViewerBar(); vLayout();
+  vAnimate(v0, flick && Math.abs(v0) > 400 ? 0.86 : 1, 0.42);
+}
+function vRelease(v) {
+  const stride = vStride(), proj = vOff + v * 0.099; // куда страница «долетела бы» по инерции
+  let d = proj < -stride / 2 ? 1 : proj > stride / 2 ? -1 : 0;
+  if (vPos + d < 0 || vPos + d >= pages.length) d = 0;
+  if (d) vCommit(d, v, true); else vAnimate(v, Math.abs(v) > 400 ? 0.86 : 1, 0.42);
+}
+
+function openViewer(i, from) {
+  const pos = pages.indexOf(i); if (pos < 0) return;
+  vPos = pos; vFrom = from || null;
+  $("viewer").hidden = false;
+  $("bar").inert = $("main").inert = $("status").inert = true;
+  $("vclose").focus();
+  showViewer();
+}
+function closeViewer() {
+  if ($("viewer").hidden) return;
+  $("viewer").hidden = true; cancelAnimationFrame(vAnim); vAnim = 0; vDrag = null; vPos = -1;
+  vSlides.clear(); vCache.clear(); $("vstage").replaceChildren();
+  $("bar").inert = $("main").inert = $("status").inert = false;
+  if (vFrom && vFrom.isConnected) vFrom.focus();
+  vFrom = null;
+}
+function stepViewer(d) {
+  if (vPos < 0) return;
+  const n = vPos + d;
+  if (n < 0 || n >= pages.length) { vAnimate(-d * 900, 0.6, 0.35); return; } // упёрлись в край — мягкий толчок
+  vCommit(d, vAnim ? vVel : 0, false);
+}
+function updateViewerBar() {
+  if (vPos < 0) return;
+  const on = sel.has(pages[vPos]);
+  $("vnum").textContent = `Страница ${vPos + 1} из ${pages.length}` + (on ? " · выбрана" : "");
+  $("vnum").classList.toggle("sel", on);
+  $("vsel").textContent = on ? "Снять выбор" : "Выбрать для удаления";
+  $("vprev").disabled = vPos === 0; $("vnext").disabled = vPos === pages.length - 1;
+  for (const [idx, rec] of vSlides) rec.el.classList.toggle("sel", sel.has(idx));
+}
+function showViewer() {
+  cancelAnimationFrame(vAnim); vAnim = 0; vVel = 0; vOff = 0; vDrag = null;
+  for (const rec of vSlides.values()) rec.el.remove();
+  vSlides.clear(); vCache.clear();
+  vDims = vMetrics(); updateViewerBar(); vLayout();
+}
+$("vclose").onclick = closeViewer;
+$("vprev").onclick = () => stepViewer(-1); $("vnext").onclick = () => stepViewer(1);
+$("vsel").onclick = () => {
+  const i = pages[vPos]; sel.has(i) ? sel.delete(i) : sel.add(i);
+  anchor = i; refreshSel(); updateViewerBar();
+};
+
+// Жест: страница идёт за пальцем 1:1, на отпускании забирает его скорость
+const vst = $("vstage");
+vst.addEventListener("pointerdown", (e) => {
+  if (e.button > 0 || vPos < 0) return;
+  cancelAnimationFrame(vAnim); vAnim = 0; // можно «схватить» страницу в полёте
+  vDrag = { id: e.pointerId, x0: e.clientX, o0: vOff, moved: false, pts: [[e.timeStamp, e.clientX]] };
+});
+vst.addEventListener("pointermove", (e) => {
+  const g = vDrag; if (!g || e.pointerId !== g.id) return;
+  const dx = e.clientX - g.x0;
+  if (!g.moved) { if (Math.abs(dx) < 5) return; g.moved = true; try { vst.setPointerCapture(e.pointerId); } catch (_) {} }
+  vOff = vEdge(g.o0 + dx);
+  g.pts.push([e.timeStamp, e.clientX]);
+  while (g.pts.length > 2 && e.timeStamp - g.pts[0][0] > 100) g.pts.shift();
+  vLayout();
+});
+const vEnd = (e) => {
+  const g = vDrag; if (!g || e.pointerId !== g.id) return; vDrag = null;
+  if (!g.moved) { if (vOff !== 0) vAnimate(0, 1, 0.4); return; }
+  vJust = true; setTimeout(() => (vJust = false));
+  const a = g.pts[0], b = g.pts[g.pts.length - 1];
+  vRelease(e.type === "pointerup" && b[0] > a[0] && e.timeStamp - b[0] < 80 ? ((b[1] - a[1]) / (b[0] - a[0])) * 1000 : 0);
+};
+vst.addEventListener("pointerup", vEnd); vst.addEventListener("pointercancel", vEnd);
+vst.onclick = (e) => { if (!vJust && e.target === vst) closeViewer(); };
+// Два пальца по трекпаду: то же самое, но колесом
+let vWt = 0, vWraw = 0, vWp = [];
+vst.addEventListener("wheel", (e) => {
+  if (vPos < 0 || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+  e.preventDefault();
+  if (!vWt) { cancelAnimationFrame(vAnim); vAnim = 0; vWraw = vOff; vWp = []; }
+  vWraw -= e.deltaX; vOff = vEdge(vWraw);
+  vWp.push([e.timeStamp, -e.deltaX]); while (vWp.length > 2 && e.timeStamp - vWp[0][0] > 100) vWp.shift();
+  vLayout();
+  clearTimeout(vWt);
+  vWt = setTimeout(() => {
+    vWt = 0;
+    const span = Math.max(16, vWp[vWp.length - 1][0] - vWp[0][0]) / 1000;
+    vRelease(vWp.slice(1).reduce((s, p) => s + p[1], 0) / span);
+  }, 110);
+}, { passive: false });
+addEventListener("resize", () => { if (!$("viewer").hidden) { clearTimeout(vRs); vRs = setTimeout(showViewer, 150); } });
+
+const pick = () => $("fileInput").click();
+$("openBtn").onclick = $("openBtn2").onclick = $("file").onclick = pick;
+$("fileInput").onchange = (e) => { load(e.target.files[0]); e.target.value = ""; };
+$("nameInput").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); if (!$("saveBtn").disabled) savePdf(); } };
+$("delBtn").onclick = deleteSelected; $("undoBtn").onclick = undo; $("saveBtn").onclick = savePdf;
+$("rangeForm").onsubmit = (e) => {
+  e.preventDefault();
+  if (!pdf) return;
+  const r = parseRanges($("rangeInput").value, pages.length);
+  if (r.error) return say(r.error, "error");
+  sel = new Set(r.pages.map((n) => pages[n - 1])); anchor = null; refreshSel(); say(`Выбрано страниц: ${r.pages.length}`);
+};
+
+// Перетаскивание: реагируем только на файлы
+const isFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+let depth = 0;
+addEventListener("dragenter", (e) => { if (!isFiles(e)) return; e.preventDefault(); depth++; $("drop").classList.add("on"); });
+addEventListener("dragleave", (e) => { if (!isFiles(e)) return; if (--depth <= 0) { depth = 0; $("drop").classList.remove("on"); } });
+addEventListener("dragover", (e) => { if (isFiles(e)) e.preventDefault(); });
+addEventListener("drop", (e) => {
+  if (!isFiles(e)) return;
+  e.preventDefault(); depth = 0; $("drop").classList.remove("on"); load(e.dataTransfer.files[0]);
+});
+addEventListener("keydown", (e) => {
+  if (!$("viewer").hidden) {
+    if (e.key === "Escape") { e.preventDefault(); closeViewer(); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); stepViewer(-1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); stepViewer(1); }
+    return;
+  }
+  if (!pdf || e.target.tagName === "INPUT") return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+  else if (e.key === "Delete" || e.key === "Backspace") { if (sel.size) { e.preventDefault(); deleteSelected(); } }
+  else if (e.key === "Escape" && sel.size) { sel = new Set(); anchor = null; refreshSel(); }
+});
+
+// Плавное перестроение сетки (FLIP): страницы скользят на новые места, удалённые растворяются
+const _render = render;
+render = function () {
+  const rm = matchMedia("(prefers-reduced-motion: reduce)").matches, first = new Map();
+  if (!rm) for (const c of cards.values()) if (c.isConnected) { const r = c.getBoundingClientRect(); if (r.bottom > -300 && r.top < innerHeight + 300) first.set(c, r); }
+  _render();
+  for (const [c, r] of first) {
+    if (c.isConnected) {
+      const n = c.getBoundingClientRect(), dx = r.left - n.left, dy = r.top - n.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+      c.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 520, easing: "cubic-bezier(.32,.72,0,1)" });
+    } else {
+      const g = c.cloneNode(true);
+      Object.assign(g.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", margin: 0, pointerEvents: "none", zIndex: 5 });
+      document.body.appendChild(g);
+      g.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.9)" }], { duration: 260, easing: "cubic-bezier(.32,.72,0,1)" }).onfinish = () => g.remove();
+    }
+  }
+};
+
+// Высота панели инструментов — для отступа контента (он скроллится под полупрозрачной панелью)
+new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
+// Просмотр раскрывается из миниатюры и сворачивается обратно по тому же пути
+const _open = openViewer, _close = closeViewer; let closing = false;
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+openViewer = function (i, from) {
+  const v = $("viewer");
+  if (from && from.getBoundingClientRect) { const r = from.getBoundingClientRect(); v.style.setProperty("--ox", r.left + r.width / 2 + "px"); v.style.setProperty("--oy", r.top + r.height / 2 + "px"); }
+  closing = false; _open(i, from);
+};
+closeViewer = function () {
+  const v = $("viewer");
+  if (v.hidden || closing) return;
+  if (reduced()) return _close();
+  closing = true;
+  const a = v.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.9)" }], { duration: 280, easing: "cubic-bezier(.32,.72,0,1)", fill: "forwards" });
+  const done = () => { closing = false; _close(); a.cancel(); };
+  a.finished.then(done, done);
+};
+$("vclose").onclick = closeViewer;
+</script>
+</body>
+</html>
